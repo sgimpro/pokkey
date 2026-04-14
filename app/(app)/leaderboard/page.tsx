@@ -1,16 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import ScoreCard from "@/components/ScoreCard";
 
 export const dynamic = "force-dynamic";
 
 function getMonday(): string {
   const now = new Date();
   const day = now.getUTCDay();
-  const diff = day === 0 ? 6 : day - 1; // Monday = 0 offset
+  const diff = day === 0 ? 6 : day - 1;
   const monday = new Date(now);
   monday.setUTCDate(now.getUTCDate() - diff);
   monday.setUTCHours(0, 0, 0, 0);
   return monday.toISOString();
+}
+
+function getDayOfWeekIndex(): number {
+  const day = new Date().getUTCDay();
+  return day === 0 ? 6 : day - 1; // Mon=0, Sun=6
 }
 
 export default async function LeaderboardPage() {
@@ -23,12 +29,16 @@ export default async function LeaderboardPage() {
   // Get friend IDs
   const { data: friendships } = await supabase
     .from("friendships")
-    .select("friend_id")
+    .select("friend_id, streak_count")
     .eq("user_id", user.id)
     .eq("status", "accepted");
 
   const friendIds = (friendships || []).map((f) => f.friend_id);
   const allIds = [user.id, ...friendIds];
+  const friendsCount = friendIds.length;
+
+  // Best streak among all friendships
+  const bestStreak = Math.max(0, ...(friendships || []).map((f) => f.streak_count || 0));
 
   // All-time scores
   const { data: scores } = await supabase
@@ -37,15 +47,34 @@ export default async function LeaderboardPage() {
     .in("id", allIds)
     .order("score", { ascending: false });
 
-  // Weekly MVP — count nudges sent this week per user in our circle
+  // User's rank
+  const myScore = scores?.find((s) => s.id === user.id);
+  const rank = (scores || []).findIndex((s) => s.id === user.id) + 1;
+  const totalUsers = (scores || []).length;
+
+  // Weekly nudges for MVP
   const mondayISO = getMonday();
   const { data: weeklyNudges } = await supabase
     .from("nudges")
-    .select("sender_id")
+    .select("sender_id, sent_at")
     .in("sender_id", allIds)
     .gte("sent_at", mondayISO);
 
-  // Tally weekly points
+  // Weekly activity for current user (Mon-Sun booleans)
+  const weeklyActivity = [false, false, false, false, false, false, false];
+  const todayIndex = getDayOfWeekIndex();
+  if (weeklyNudges) {
+    for (const n of weeklyNudges) {
+      if (n.sender_id === user.id) {
+        const d = new Date(n.sent_at);
+        const dayOfWeek = d.getUTCDay();
+        const idx = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        weeklyActivity[idx] = true;
+      }
+    }
+  }
+
+  // Tally weekly pokes per user
   const weeklyMap: Record<string, number> = {};
   if (weeklyNudges) {
     for (const n of weeklyNudges) {
@@ -53,7 +82,33 @@ export default async function LeaderboardPage() {
     }
   }
 
-  // Find the MVP
+  // Response rate: of pokes received, how many did user poke back within 24h
+  const { data: receivedNudges } = await supabase
+    .from("nudges")
+    .select("sender_id, sent_at")
+    .eq("receiver_id", user.id);
+
+  const { data: sentNudges } = await supabase
+    .from("nudges")
+    .select("receiver_id, sent_at")
+    .eq("sender_id", user.id);
+
+  let responded = 0;
+  let totalReceived = (receivedNudges || []).length;
+  if (receivedNudges && sentNudges) {
+    for (const received of receivedNudges) {
+      const receivedTime = new Date(received.sent_at).getTime();
+      const pokedBack = sentNudges.some((sent) => {
+        if (sent.receiver_id !== received.sender_id) return false;
+        const sentTime = new Date(sent.sent_at).getTime();
+        return sentTime > receivedTime && sentTime - receivedTime < 24 * 60 * 60 * 1000;
+      });
+      if (pokedBack) responded++;
+    }
+  }
+  const responseRate = totalReceived > 0 ? Math.round((responded / totalReceived) * 100) : 100;
+
+  // Find MVP
   let mvpId: string | null = null;
   let mvpScore = 0;
   for (const [id, count] of Object.entries(weeklyMap)) {
@@ -62,10 +117,9 @@ export default async function LeaderboardPage() {
       mvpId = id;
     }
   }
-
   const mvpUser = scores?.find((s) => s.id === mvpId);
 
-  // Build weekly ranking
+  // Weekly ranking
   const weeklyRanking = allIds
     .map((id) => ({
       id,
@@ -81,6 +135,19 @@ export default async function LeaderboardPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto p-4 pb-24">
         <h1 className="text-xl font-bold py-4">Leaderboard</h1>
+
+        {/* Poking Champion Score Card */}
+        <ScoreCard
+          name={myScore?.name || "You"}
+          score={myScore?.score || 0}
+          rank={rank}
+          totalUsers={totalUsers}
+          friendsCount={friendsCount}
+          bestStreak={bestStreak}
+          weeklyActivity={weeklyActivity}
+          responseRate={responseRate}
+          profileId={user.id}
+        />
 
         {/* Weekly MVP Section */}
         {mvpUser && mvpScore > 0 && (
@@ -107,7 +174,6 @@ export default async function LeaderboardPage() {
               </div>
             </div>
 
-            {/* Weekly runners up */}
             {weeklyRanking.length > 1 && (
               <div className="mt-2 space-y-1">
                 {weeklyRanking.slice(1, 4).map((u, i) => (

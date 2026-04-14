@@ -21,13 +21,12 @@ export async function GET(req: Request) {
 
   const admin = createAdminClient();
   const now = new Date();
-  const currentHour = now.getUTCHours();
 
-  // Find users with reminder set for this hour
+  // Find all users with reminders enabled (reminder_hour is not null)
   const { data: users } = await admin
     .from("users")
     .select("id, name")
-    .eq("reminder_hour", currentHour);
+    .not("reminder_hour", "is", null);
 
   if (!users || users.length === 0) {
     return NextResponse.json({ sent: 0 });

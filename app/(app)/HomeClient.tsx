@@ -1,18 +1,33 @@
 "use client"
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import FriendCard from '@/components/FriendCard'
 import PushPrompt from '@/components/PushPrompt'
+import AchievementToast from '@/components/AchievementToast'
 import { useRouter } from 'next/navigation'
+import type { Achievement } from '@/lib/achievements'
 
 export default function HomeClient({ profile, friendships, pendingFriendships }: any) {
   const [localFriendships, setLocalFriendships] = useState(friendships)
+  const [toastQueue, setToastQueue] = useState<Achievement[]>([])
+  const [currentToast, setCurrentToast] = useState<Achievement | null>(null)
   const router = useRouter()
 
-  const handleNudge = async (friendshipId: string, friendId: string) => {
+  const showNextToast = useCallback(() => {
+    setToastQueue((prev) => {
+      if (prev.length > 0) {
+        setCurrentToast(prev[0])
+        return prev.slice(1)
+      }
+      setCurrentToast(null)
+      return prev
+    })
+  }, [])
+
+  const handleNudge = async (friendshipId: string, friendId: string, pokeType?: string) => {
     const res = await fetch('/api/nudge', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ friendshipId, friendId })
+      body: JSON.stringify({ friendshipId, friendId, pokeType: pokeType || 'poke' })
     })
     if (res.ok) {
       setLocalFriendships((prev: any[]) =>
@@ -21,6 +36,25 @@ export default function HomeClient({ profile, friendships, pendingFriendships }:
           : f
         )
       )
+
+      // Check for new achievements after each poke
+      try {
+        const achRes = await fetch('/api/check-achievements', { method: 'POST' })
+        if (achRes.ok) {
+          const { newAchievements } = await achRes.json()
+          if (newAchievements && newAchievements.length > 0) {
+            // Queue up achievement toasts
+            setToastQueue((prev) => {
+              const all = [...prev, ...newAchievements]
+              if (!currentToast) {
+                setCurrentToast(all[0])
+                return all.slice(1)
+              }
+              return all
+            })
+          }
+        }
+      } catch {}
     }
   }
 
@@ -35,10 +69,13 @@ export default function HomeClient({ profile, friendships, pendingFriendships }:
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Achievement toast */}
+      <AchievementToast achievement={currentToast} onDone={showNextToast} />
+
       <div className="max-w-md mx-auto p-4 pb-24">
         <div className="flex items-center justify-between py-4">
           <div>
-            <h1 className="text-2xl font-black text-orange-500">PŌKKEY</h1>
+            <h1 className="text-2xl font-black text-orange-500">POKKEY</h1>
             <p className="text-sm text-gray-500">Hey {profile.name}</p>
           </div>
           <div className="text-right">

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { sendSMS } from "@/lib/twilio";
 import { sendPushNotification } from "@/lib/push";
 import { SCORE_EVENTS } from "@/lib/scoring";
+import { getPokeType } from "@/lib/poke-types";
 
 export async function POST(req: Request) {
   const supabase = createRouteHandlerClient({ cookies });
@@ -13,12 +14,14 @@ export async function POST(req: Request) {
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { friendshipId, friendId } = await req.json();
+  const { friendshipId, friendId, pokeType: pokeTypeId } = await req.json();
+  const pokeType = getPokeType(pokeTypeId || "poke");
 
-  // Insert nudge record
+  // Insert nudge record with poke type
   await supabase.from("nudges").insert({
     sender_id: user.id,
     receiver_id: friendId,
+    poke_type: pokeType.id,
   });
 
   // Update last_nudge_at only on the sender's friendship row (not the receiver's)
@@ -138,8 +141,8 @@ export async function POST(req: Request) {
       for (const sub of pushSubs) {
         try {
           await sendPushNotification(sub.subscription as any, {
-            title: "PŌKKEY",
-            body: sender?.name + " just poked you!",
+            title: "PŌKKEY " + pokeType.emoji,
+            body: sender?.name + " just " + pokeType.notificationText + " you!",
             url: "/",
           });
           pushSent = true;
@@ -156,7 +159,7 @@ export async function POST(req: Request) {
       try {
         await sendSMS(
           friend.phone,
-          sender?.name + " just poked you on PŌKKEY! Poke back: " + process.env.NEXT_PUBLIC_APP_URL
+          sender?.name + " just " + pokeType.notificationText + " you on PŌKKEY! " + pokeType.emoji + " Poke back: " + process.env.NEXT_PUBLIC_APP_URL
         );
       } catch (e) {
         console.error("SMS send failed:", e);

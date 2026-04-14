@@ -43,7 +43,7 @@ export default async function LeaderboardPage() {
   // All-time scores
   const { data: scores } = await supabase
     .from("users")
-    .select("id, name, score")
+    .select("id, name, score, active_title")
     .in("id", allIds)
     .order("score", { ascending: false });
 
@@ -147,6 +147,7 @@ export default async function LeaderboardPage() {
           weeklyActivity={weeklyActivity}
           responseRate={responseRate}
           profileId={user.id}
+          activeTitle={myScore?.active_title || null}
         />
 
         {/* Weekly MVP Section */}

@@ -15,6 +15,26 @@ export default function GuidePage() {
         </div>
 
         <div className="bg-white rounded-2xl p-5 border border-gray-200 mb-4">
+          <p className="text-2xl mb-2">&#127912;</p>
+          <h2 className="font-bold text-lg text-gray-800">Choose your poke</h2>
+          <p className="text-gray-500 mt-1">
+            Tap the + button next to any friend to pick a poke type —
+            wave, hug, &quot;let&apos;s hang,&quot; &quot;miss you,&quot; and more.
+            Each sends a different notification so your friend knows exactly what you mean.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <span className="px-2.5 py-1 bg-orange-50 rounded-lg text-sm">👊 Poke</span>
+            <span className="px-2.5 py-1 bg-orange-50 rounded-lg text-sm">👋 Wave</span>
+            <span className="px-2.5 py-1 bg-orange-50 rounded-lg text-sm">💭 Thinking</span>
+            <span className="px-2.5 py-1 bg-orange-50 rounded-lg text-sm">🍻 Hang</span>
+            <span className="px-2.5 py-1 bg-orange-50 rounded-lg text-sm">🤗 Hug</span>
+            <span className="px-2.5 py-1 bg-orange-50 rounded-lg text-sm">🙌 High five</span>
+            <span className="px-2.5 py-1 bg-orange-50 rounded-lg text-sm">🔥 Hype</span>
+            <span className="px-2.5 py-1 bg-orange-50 rounded-lg text-sm">🥺 Miss you</span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 border border-gray-200 mb-4">
           <p className="text-2xl mb-2">&#128260;</p>
           <h2 className="font-bold text-lg text-gray-800">Poke back</h2>
           <p className="text-gray-500 mt-1">
@@ -39,6 +59,48 @@ export default function GuidePage() {
             Share your invite link from the home screen. When someone signs up
             through your link, you&apos;re instantly connected — you earn 10 points
             and they start with 5 points!
+          </p>
+        </div>
+
+        {/* Achievements */}
+        <h2 className="text-sm font-semibold text-gray-500 mb-2">ACHIEVEMENTS</h2>
+        <div className="bg-white rounded-2xl p-5 border border-gray-200 mb-6">
+          <p className="text-gray-500 mb-3">
+            Unlock badges and titles as you use POKKEY. Earn cosmetic titles you can
+            display on your profile and shareable scorecard.
+          </p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
+              <span className="text-xl">🐣</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Rookie Poker</p>
+                <p className="text-xs text-gray-400">Reach 10 points</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
+              <span className="text-xl">🧊</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Ice Breaker</p>
+                <p className="text-xs text-gray-400">Send your first poke</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
+              <span className="text-xl">🔥</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">On Fire</p>
+                <p className="text-xs text-gray-400">Hit a 7-day streak</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
+              <span className="text-xl">🏆</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Poking Legend</p>
+                <p className="text-xs text-gray-400">Reach 1,000 points</p>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-3 text-center">
+            ...and 8 more to discover! Check your Profile to see them all.
           </p>
         </div>
 

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SignOutButton from '@/components/SignOutButton'
 import ReminderSetting from '@/components/ReminderSetting'
+import ProfileBadges from './ProfileBadges'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,14 @@ export default async function ProfilePage() {
     .select('*', { count: 'exact', head: true })
     .eq('receiver_id', user.id)
 
+  // Fetch earned achievements
+  const { data: achievements } = await supabase
+    .from('user_achievements')
+    .select('achievement_id')
+    .eq('user_id', user.id)
+
+  const earnedIds = (achievements || []).map((a) => a.achievement_id)
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto p-4 pb-24">
@@ -36,6 +45,11 @@ export default async function ProfilePage() {
               {profile?.name?.[0]?.toUpperCase()}
             </div>
             <h2 className="mt-3 text-xl font-bold">{profile?.name}</h2>
+            {profile?.active_title && (
+              <p className="text-orange-500 text-xs font-bold tracking-wider mt-0.5">
+                {profile.active_title}
+              </p>
+            )}
             <p className="text-gray-500 text-sm">{profile?.phone}</p>
           </div>
           <div className="grid grid-cols-3 gap-3 pt-2">
@@ -53,6 +67,16 @@ export default async function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Badges & Achievements */}
+        <div className="mt-4 bg-white rounded-2xl p-5 border border-gray-200">
+          <h2 className="text-sm font-semibold text-gray-500 mb-3">BADGES & ACHIEVEMENTS</h2>
+          <ProfileBadges
+            earnedIds={earnedIds}
+            activeTitle={profile?.active_title || null}
+          />
+        </div>
+
         <div className="mt-4">
           <ReminderSetting initialHour={profile?.reminder_hour ?? null} />
         </div>

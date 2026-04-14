@@ -11,6 +11,7 @@ interface ScoreCardProps {
   weeklyActivity: boolean[]; // 7 booleans, Mon-Sun
   responseRate: number; // 0-100
   profileId: string;
+  activeTitle?: string | null;
 }
 
 // Dynamically load html2canvas only when needed
@@ -41,6 +42,7 @@ export default function ScoreCard({
   weeklyActivity,
   responseRate,
   profileId,
+  activeTitle,
 }: ScoreCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [showShareSheet, setShowShareSheet] = useState(false);
@@ -182,7 +184,7 @@ export default function ScoreCard({
               letterSpacing: "0.05em",
             }}
           >
-            🏆 POKING CHAMPION
+            🏆 {activeTitle || "POKING CHAMPION"}
           </div>
         </div>
 

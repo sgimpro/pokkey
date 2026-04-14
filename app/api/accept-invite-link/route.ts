@@ -66,5 +66,11 @@ export async function POST(req: Request) {
     amount: SCORE_EVENTS.NEW_USER_INVITED,
   });
 
+  // Award signup bonus to the new user who joined via invite
+  await admin.rpc("increment_score", {
+    user_id: user.id,
+    amount: SCORE_EVENTS.JOINED_VIA_INVITE,
+  });
+
   return NextResponse.json({ success: true, message: "Friendship created" });
 }

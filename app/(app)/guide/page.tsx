@@ -37,7 +37,8 @@ export default function GuidePage() {
           <h2 className="font-bold text-lg text-gray-800">Invite friends</h2>
           <p className="text-gray-500 mt-1">
             Share your invite link from the home screen. When someone signs up
-            through your link, you&apos;re instantly connected and you earn 10 points.
+            through your link, you&apos;re instantly connected — you earn 10 points
+            and they start with 5 points!
           </p>
         </div>
 
@@ -65,12 +66,19 @@ export default function GuidePage() {
             </div>
             <span className="font-bold text-orange-500">+5</span>
           </div>
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <span className="text-xl">&#127881;</span>
               <span className="text-gray-700">Invite a friend</span>
             </div>
             <span className="font-bold text-orange-500">+10</span>
+          </div>
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">&#127873;</span>
+              <span className="text-gray-700">Join via invite link</span>
+            </div>
+            <span className="font-bold text-orange-500">+5</span>
           </div>
         </div>
 

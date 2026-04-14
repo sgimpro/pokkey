@@ -9,11 +9,31 @@ export function getTimerStatus(lastNudgeAt: string | null): TimerStatus {
 }
 
 export function getTimerLabel(lastNudgeAt: string | null): string {
-  if (!lastNudgeAt) return 'Never nudged'
-  const days = Math.floor((Date.now() - new Date(lastNudgeAt).getTime()) / (1000 * 60 * 60 * 24))
-  if (days === 0) return 'Today'
+  if (!lastNudgeAt) return 'Never poked'
+  const ms = Date.now() - new Date(lastNudgeAt).getTime()
+  const mins = Math.floor(ms / (1000 * 60))
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
   if (days === 1) return 'Yesterday'
-  return `${days} days ago`
+  return `${days}d ago`
+}
+
+export function getCooldownRemaining(lastNudgeAt: string | null): string | null {
+  if (!lastNudgeAt) return null
+  const COOLDOWN_MS = 60 * 60 * 1000 // 1 hour cooldown
+  const elapsed = Date.now() - new Date(lastNudgeAt).getTime()
+  const remaining = COOLDOWN_MS - elapsed
+  if (remaining <= 0) return null
+  const mins = Math.floor(remaining / (1000 * 60))
+  if (mins >= 60) {
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    return `${h}h ${m}m`
+  }
+  return `${mins}m`
 }
 
 export const statusColors = {

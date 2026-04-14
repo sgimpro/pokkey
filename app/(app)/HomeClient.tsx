@@ -61,6 +61,28 @@ export default function HomeClient({ profile, friendships, pendingFriendships }:
 
         <PushPrompt />
 
+        {/* Share invite link */}
+        <button
+          onClick={async () => {
+            const link = `${window.location.origin}/invite/${profile.id}`;
+            if (navigator.share) {
+              try {
+                await navigator.share({
+                  title: "POKKEY",
+                  text: `${profile.name} is thinking about you. See your friendship score on POKKEY!`,
+                  url: link,
+                });
+              } catch {}
+            } else {
+              await navigator.clipboard.writeText(link);
+              alert("Invite link copied!");
+            }
+          }}
+          className="w-full mb-4 py-3 bg-orange-500 text-white rounded-2xl font-bold text-center active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+        >
+          <span>&#128279;</span> Invite a Friend (+10 pts)
+        </button>
+
         <h2 className="text-sm font-semibold text-gray-500 mb-2">YOUR PEOPLE</h2>
         {localFriendships.length === 0 ? (
           <div className="text-center py-12">

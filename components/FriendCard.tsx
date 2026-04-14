@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { getTimerStatus, getTimerLabel, statusColors } from "@/lib/timer";
+import { useState, useEffect } from "react";
+import { getTimerStatus, getTimerLabel, getCooldownRemaining, statusColors } from "@/lib/timer";
 
 interface FriendCardProps {
   friendship: {
@@ -15,13 +15,27 @@ interface FriendCardProps {
 export default function FriendCard({ friendship, onNudge }: FriendCardProps) {
   const [nudging, setNudging] = useState(false);
   const [justNudged, setJustNudged] = useState(false);
-  const status = getTimerStatus(friendship.last_nudge_at);
+  const [lastNudge, setLastNudge] = useState(friendship.last_nudge_at);
+  const [cooldown, setCooldown] = useState<string | null>(
+    getCooldownRemaining(friendship.last_nudge_at)
+  );
+  const status = getTimerStatus(lastNudge);
   const colors = statusColors[status];
   const streak = friendship.streak_count || 0;
+
+  // Update cooldown every 15s
+  useEffect(() => {
+    const tick = () => setCooldown(getCooldownRemaining(lastNudge));
+    tick();
+    const interval = setInterval(tick, 15000);
+    return () => clearInterval(interval);
+  }, [lastNudge]);
 
   const handleNudge = async () => {
     setNudging(true);
     await onNudge(friendship.id, friendship.friend.id);
+    const now = new Date().toISOString();
+    setLastNudge(now);
     setJustNudged(true);
     setNudging(false);
     setTimeout(() => setJustNudged(false), 2000);
@@ -33,6 +47,8 @@ export default function FriendCard({ friendship, onNudge }: FriendCardProps) {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  const onCooldown = !!cooldown && !justNudged;
 
   return (
     <div
@@ -56,20 +72,22 @@ export default function FriendCard({ friendship, onNudge }: FriendCardProps) {
             )}
           </div>
           <p className={`text-xs ${colors.text}`}>
-            {getTimerLabel(friendship.last_nudge_at)}
+            {getTimerLabel(lastNudge)}
           </p>
         </div>
       </div>
       <button
         onClick={handleNudge}
-        disabled={nudging || justNudged}
+        disabled={nudging || justNudged || onCooldown}
         className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
           justNudged
             ? "bg-green-500 text-white"
+            : onCooldown
+            ? "bg-gray-300 text-gray-500"
             : "bg-orange-500 text-white active:scale-95"
         } disabled:opacity-70`}
       >
-        {nudging ? "..." : justNudged ? "Sent!" : "Poke"}
+        {nudging ? "..." : justNudged ? "Sent!" : onCooldown ? cooldown : "Poke"}
       </button>
     </div>
   );

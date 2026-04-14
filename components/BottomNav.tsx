@@ -6,6 +6,7 @@ const tabs = [
   { href: '/', label: 'Home', icon: '&#128101;' },
   { href: '/add', label: 'Add', icon: '&#10133;' },
   { href: '/leaderboard', label: 'Scores', icon: '&#127942;' },
+  { href: '/guide', label: 'Guide', icon: '&#128161;' },
   { href: '/profile', label: 'Profile', icon: '&#128100;' },
 ]
 

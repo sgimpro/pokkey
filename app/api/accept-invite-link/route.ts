@@ -50,14 +50,14 @@ export async function POST(req: Request) {
     user_id: inviterId,
     friend_id: user.id,
     status: "accepted",
-    last_nudge_at: new Date().toISOString(),
+    last_nudge_at: null,
   });
 
   await admin.from("friendships").upsert({
     user_id: user.id,
     friend_id: inviterId,
     status: "accepted",
-    last_nudge_at: new Date().toISOString(),
+    last_nudge_at: null,
   });
 
   // Award referral points to the inviter

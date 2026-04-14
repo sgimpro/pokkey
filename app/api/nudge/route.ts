@@ -21,17 +21,12 @@ export async function POST(req: Request) {
     receiver_id: friendId,
   });
 
-  // Update friendship last_nudge_at (both directions)
+  // Update last_nudge_at only on the sender's friendship row (not the receiver's)
+  // This way the friend can still poke back immediately
   await supabase
     .from("friendships")
     .update({ last_nudge_at: new Date().toISOString() })
     .eq("id", friendshipId);
-
-  await supabase
-    .from("friendships")
-    .update({ last_nudge_at: new Date().toISOString() })
-    .eq("user_id", friendId)
-    .eq("friend_id", user.id);
 
   // Add score to sender
   await supabase.rpc("increment_score", {

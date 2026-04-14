@@ -1,7 +1,7 @@
 export type TimerStatus = 'green' | 'yellow' | 'red'
 
 export function getTimerStatus(lastNudgeAt: string | null): TimerStatus {
-  if (!lastNudgeAt) return 'red'
+  if (!lastNudgeAt) return 'green'
   const hours = (Date.now() - new Date(lastNudgeAt).getTime()) / (1000 * 60 * 60)
   if (hours < 72) return 'green'
   if (hours < 168) return 'yellow'
@@ -9,7 +9,7 @@ export function getTimerStatus(lastNudgeAt: string | null): TimerStatus {
 }
 
 export function getTimerLabel(lastNudgeAt: string | null): string {
-  if (!lastNudgeAt) return 'Never poked'
+  if (!lastNudgeAt) return 'New friend — say hi!'
   const ms = Date.now() - new Date(lastNudgeAt).getTime()
   const mins = Math.floor(ms / (1000 * 60))
   if (mins < 1) return 'Just now'

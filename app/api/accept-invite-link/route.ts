@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { SCORE_EVENTS } from "@/lib/scoring";
 
 export async function POST(req: Request) {
@@ -18,8 +19,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   }
 
+  // Use admin client to bypass RLS (we need to insert rows for both users)
+  const admin = createAdminClient();
+
   // Check inviter exists
-  const { data: inviter } = await supabase
+  const { data: inviter } = await admin
     .from("users")
     .select("id")
     .eq("id", inviterId)
@@ -30,7 +34,7 @@ export async function POST(req: Request) {
   }
 
   // Check if friendship already exists (either direction)
-  const { data: existing } = await supabase
+  const { data: existing } = await admin
     .from("friendships")
     .select("id")
     .eq("user_id", inviterId)
@@ -42,14 +46,14 @@ export async function POST(req: Request) {
   }
 
   // Create friendship in both directions, auto-accepted
-  await supabase.from("friendships").upsert({
+  await admin.from("friendships").upsert({
     user_id: inviterId,
     friend_id: user.id,
     status: "accepted",
     last_nudge_at: new Date().toISOString(),
   });
 
-  await supabase.from("friendships").upsert({
+  await admin.from("friendships").upsert({
     user_id: user.id,
     friend_id: inviterId,
     status: "accepted",
@@ -57,7 +61,7 @@ export async function POST(req: Request) {
   });
 
   // Award referral points to the inviter
-  await supabase.rpc("increment_score", {
+  await admin.rpc("increment_score", {
     user_id: inviterId,
     amount: SCORE_EVENTS.NEW_USER_INVITED,
   });

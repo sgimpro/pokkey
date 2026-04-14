@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SignOutButton from '@/components/SignOutButton'
+import ReminderSetting from '@/components/ReminderSetting'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,6 +52,9 @@ export default async function ProfilePage() {
               <p className="text-xs text-gray-500">Received</p>
             </div>
           </div>
+        </div>
+        <div className="mt-4">
+          <ReminderSetting initialHour={profile?.reminder_hour ?? null} />
         </div>
         <div className="mt-4">
           <SignOutButton />

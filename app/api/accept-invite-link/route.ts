@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { SCORE_EVENTS } from "@/lib/scoring";
 
 export async function POST(req: Request) {
   const supabase = createRouteHandlerClient({ cookies });
@@ -53,6 +54,12 @@ export async function POST(req: Request) {
     friend_id: inviterId,
     status: "accepted",
     last_nudge_at: new Date().toISOString(),
+  });
+
+  // Award referral points to the inviter
+  await supabase.rpc("increment_score", {
+    user_id: inviterId,
+    amount: SCORE_EVENTS.NEW_USER_INVITED,
   });
 
   return NextResponse.json({ success: true, message: "Friendship created" });

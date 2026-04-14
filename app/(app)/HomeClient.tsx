@@ -8,7 +8,13 @@ import WeeklySummary from '@/components/WeeklySummary'
 import DailyChallenge from '@/components/DailyChallenge'
 import { useRouter } from 'next/navigation'
 import type { Achievement } from '@/lib/achievements'
-import type { DailyChallenge as ChallengeType } from '@/lib/daily-challenges'
+interface ChallengeData {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  bonusPoints: number;
+}
 
 interface Props {
   profile: any;
@@ -21,7 +27,7 @@ interface Props {
     fadingFriendNames: string[];
   };
   dailyChallenge: {
-    challenge: ChallengeType;
+    challenge: ChallengeData;
     completed: boolean;
   };
 }

@@ -1,9 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
-import type { DailyChallenge as ChallengeType } from "@/lib/daily-challenges";
+
+interface ChallengeData {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  bonusPoints: number;
+}
 
 interface DailyChallengeProps {
-  challenge: ChallengeType;
+  challenge: ChallengeData;
   completed: boolean;
   userId: string;
 }

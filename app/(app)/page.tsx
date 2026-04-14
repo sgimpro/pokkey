@@ -73,12 +73,23 @@ export default async function HomePage() {
   // Daily challenge
   const challenge = getTodaysChallenge()
   const challengeKey = `challenge_${getChallengeId()}`
-  const { data: challengeComplete } = await supabase
+  const { data: challengeRows } = await supabase
     .from('user_achievements')
     .select('id')
     .eq('user_id', user.id)
     .eq('achievement_id', challengeKey)
-    .single()
+    .limit(1)
+
+  const challengeCompleted = (challengeRows && challengeRows.length > 0)
+
+  // Serialize challenge (strip the check function — can't pass functions to client)
+  const challengeData = {
+    id: challenge.id,
+    title: challenge.title,
+    description: challenge.description,
+    icon: challenge.icon,
+    bonusPoints: challenge.bonusPoints,
+  }
 
   return (
     <HomeClient
@@ -92,8 +103,8 @@ export default async function HomePage() {
         fadingFriendNames,
       }}
       dailyChallenge={{
-        challenge,
-        completed: !!challengeComplete,
+        challenge: challengeData,
+        completed: challengeCompleted,
       }}
     />
   )

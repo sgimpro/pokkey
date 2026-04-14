@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendPushNotification } from "@/lib/push";
+import { getTodaysChallenge } from "@/lib/daily-challenges";
 
 export const dynamic = "force-dynamic";
 
-const REMINDERS = [
-  "Don't forget to poke your people today!",
-  "Your friends are waiting for a poke!",
-  "Keep your streaks alive — poke someone!",
-  "A quick poke goes a long way. Say hi!",
-  "Who haven't you poked in a while?",
-];
-
 export async function GET(req: Request) {
-  // Verify cron secret to prevent unauthorized calls
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,8 +13,9 @@ export async function GET(req: Request) {
 
   const admin = createAdminClient();
   const now = new Date();
+  const challenge = getTodaysChallenge();
 
-  // Find all users with reminders enabled (reminder_hour is not null)
+  // Find all users with reminders enabled
   const { data: users } = await admin
     .from("users")
     .select("id, name")
@@ -32,9 +25,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ sent: 0 });
   }
 
-  // Check which of these users haven't poked anyone today
   const todayStart = new Date(now);
   todayStart.setUTCHours(0, 0, 0, 0);
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
   let sentCount = 0;
 
@@ -48,18 +41,39 @@ export async function GET(req: Request) {
       .limit(1);
 
     if (todayNudges && todayNudges.length > 0) {
-      continue; // Already active today, skip
+      continue; // Already active today
     }
 
-    // Get their push subscriptions
+    // Check for fading friends
+    const { data: friendships } = await admin
+      .from("friendships")
+      .select("friend:users!friendships_friend_id_fkey(name), last_nudge_at")
+      .eq("user_id", user.id)
+      .eq("status", "accepted");
+
+    const fadingFriends = (friendships || [])
+      .filter((f: any) => {
+        if (!f.last_nudge_at) return true;
+        return new Date(f.last_nudge_at).getTime() < sevenDaysAgo;
+      })
+      .map((f: any) => f.friend?.name || "Someone");
+
+    // Build personalized message
+    let message: string;
+    if (fadingFriends.length > 0) {
+      const names = fadingFriends.slice(0, 2).join(" & ");
+      message = `${names} ${fadingFriends.length === 1 ? "hasn't" : "haven't"} heard from you in a while. Send a poke!`;
+    } else {
+      message = `Today's challenge: ${challenge.icon} ${challenge.title} — ${challenge.description} (+${challenge.bonusPoints} pts)`;
+    }
+
+    // Get push subscriptions
     const { data: subs } = await admin
       .from("push_subscriptions")
       .select("id, subscription")
       .eq("user_id", user.id);
 
     if (!subs || subs.length === 0) continue;
-
-    const message = REMINDERS[Math.floor(Math.random() * REMINDERS.length)];
 
     for (const sub of subs) {
       try {

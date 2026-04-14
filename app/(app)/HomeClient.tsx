@@ -3,10 +3,36 @@ import { useState, useCallback } from 'react'
 import FriendCard from '@/components/FriendCard'
 import PushPrompt from '@/components/PushPrompt'
 import AchievementToast from '@/components/AchievementToast'
+import FriendshipHealth from '@/components/FriendshipHealth'
+import WeeklySummary from '@/components/WeeklySummary'
+import DailyChallenge from '@/components/DailyChallenge'
 import { useRouter } from 'next/navigation'
 import type { Achievement } from '@/lib/achievements'
+import type { DailyChallenge as ChallengeType } from '@/lib/daily-challenges'
 
-export default function HomeClient({ profile, friendships, pendingFriendships }: any) {
+interface Props {
+  profile: any;
+  friendships: any[];
+  pendingFriendships: any[];
+  weeklySummary: {
+    uniqueFriendsPoked: number;
+    totalFriends: number;
+    totalPokesThisWeek: number;
+    fadingFriendNames: string[];
+  };
+  dailyChallenge: {
+    challenge: ChallengeType;
+    completed: boolean;
+  };
+}
+
+export default function HomeClient({
+  profile,
+  friendships,
+  pendingFriendships,
+  weeklySummary,
+  dailyChallenge,
+}: Props) {
   const [localFriendships, setLocalFriendships] = useState(friendships)
   const [toastQueue, setToastQueue] = useState<Achievement[]>([])
   const [currentToast, setCurrentToast] = useState<Achievement | null>(null)
@@ -43,7 +69,6 @@ export default function HomeClient({ profile, friendships, pendingFriendships }:
         if (achRes.ok) {
           const { newAchievements } = await achRes.json()
           if (newAchievements && newAchievements.length > 0) {
-            // Queue up achievement toasts
             setToastQueue((prev) => {
               const all = [...prev, ...newAchievements]
               if (!currentToast) {
@@ -54,6 +79,11 @@ export default function HomeClient({ profile, friendships, pendingFriendships }:
             })
           }
         }
+      } catch {}
+
+      // Check daily challenge
+      try {
+        await fetch('/api/check-daily-challenge', { method: 'POST' })
       } catch {}
     }
   }
@@ -83,6 +113,24 @@ export default function HomeClient({ profile, friendships, pendingFriendships }:
             <p className="text-xs text-gray-500">points</p>
           </div>
         </div>
+
+        {/* Friendship Health Dashboard */}
+        <FriendshipHealth friendships={localFriendships} />
+
+        {/* Daily Challenge */}
+        <DailyChallenge
+          challenge={dailyChallenge.challenge}
+          completed={dailyChallenge.completed}
+          userId={profile.id}
+        />
+
+        {/* Weekly Summary */}
+        <WeeklySummary
+          uniqueFriendsPoked={weeklySummary.uniqueFriendsPoked}
+          totalFriends={weeklySummary.totalFriends}
+          totalPokesThisWeek={weeklySummary.totalPokesThisWeek}
+          fadingFriendNames={weeklySummary.fadingFriendNames}
+        />
 
         {pendingFriendships.length > 0 && (
           <div className="mb-4">

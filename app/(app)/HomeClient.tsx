@@ -173,7 +173,7 @@ export default function HomeClient({
               try {
                 await navigator.share({
                   title: "POKKEY",
-                  text: `${profile.name} is thinking about you. See your friendship score on POKKEY!`,
+                  text: `${profile.name} just poked you! 👊 Think you can keep up? Join POKKEY and find out who's the ultimate friendship champion.`,
                   url: link,
                 });
               } catch {}

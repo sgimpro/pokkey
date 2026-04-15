@@ -45,8 +45,8 @@ export default function AddFriendPage() {
   }, [])
 
   const shareText = userName
-    ? `${userName} is using POKKEY to stay connected with friends. Join me!`
-    : "I'm using POKKEY to stay connected with friends. Join me!"
+    ? `${userName} just poked you! 👊 Think you can keep up? Join POKKEY and find out who's the ultimate friendship champion.`
+    : "You just got poked! 👊 Think you can keep up? Join POKKEY and find out who's the ultimate friendship champion."
 
   const pickContacts = async () => {
     try {

@@ -8,6 +8,15 @@ interface SelectedContact {
   phone: string
 }
 
+const SHARE_PLATFORMS = [
+  { id: 'whatsapp', label: 'WhatsApp', icon: '💬', color: '#25D366', urlFn: (url: string, text: string) => `https://api.whatsapp.com/send?text=${encodeURIComponent(text + ' ' + url)}` },
+  { id: 'telegram', label: 'Telegram', icon: '✈️', color: '#0088cc', urlFn: (url: string, text: string) => `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}` },
+  { id: 'twitter', label: 'X / Twitter', icon: '𝕏', color: '#000', urlFn: (url: string, text: string) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}` },
+  { id: 'facebook', label: 'Facebook', icon: '📘', color: '#1877F2', urlFn: (url: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
+  { id: 'sms', label: 'SMS', icon: '💬', color: '#34C759', urlFn: (url: string, text: string) => `sms:?&body=${encodeURIComponent(text + ' ' + url)}` },
+  { id: 'email', label: 'Email', icon: '📧', color: '#FF6B35', urlFn: (url: string, text: string) => `mailto:?subject=${encodeURIComponent("Join me on POKKEY!")}&body=${encodeURIComponent(text + '\n\n' + url)}` },
+]
+
 export default function AddFriendPage() {
   const [hasContactPicker, setHasContactPicker] = useState(false)
   const [hasShareAPI, setHasShareAPI] = useState(false)
@@ -16,21 +25,28 @@ export default function AddFriendPage() {
   const [results, setResults] = useState<{ name: string; message: string }[]>([])
   const [inviteUrl, setInviteUrl] = useState('')
   const [copied, setCopied] = useState(false)
+  const [userName, setUserName] = useState('')
   const router = useRouter()
 
   useEffect(() => {
-    // Feature detection
     setHasContactPicker('contacts' in navigator && 'ContactsManager' in window)
     setHasShareAPI('share' in navigator)
 
-    // Build invite URL with user ID
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }: any) => {
       if (user) {
         setInviteUrl(`${window.location.origin}/invite/${user.id}`)
+        // Get name for share text
+        supabase.from('users').select('name').eq('id', user.id).single().then(({ data }: any) => {
+          if (data?.name) setUserName(data.name)
+        })
       }
     })
   }, [])
+
+  const shareText = userName
+    ? `${userName} is using POKKEY to stay connected with friends. Join me!`
+    : "I'm using POKKEY to stay connected with friends. Join me!"
 
   const pickContacts = async () => {
     try {
@@ -82,14 +98,21 @@ export default function AddFriendPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Join me on PŌKKEY',
-          text: "I'm using PŌKKEY to stay connected with friends. Join me!",
+          title: 'Join me on POKKEY',
+          text: shareText,
           url: inviteUrl
         })
       } catch (err) {
         console.log('Share cancelled:', err)
       }
     }
+  }
+
+  const openSharePlatform = (platformId: string) => {
+    const platform = SHARE_PLATFORMS.find(p => p.id === platformId)
+    if (!platform) return
+    const url = platform.urlFn(inviteUrl, shareText)
+    window.open(url, '_blank')
   }
 
   return (
@@ -110,6 +133,7 @@ export default function AddFriendPage() {
               <span className="text-xl">&#128100;</span>
               Choose from Contacts
             </button>
+            <p className="text-center text-xs text-gray-400">Select multiple contacts at once</p>
 
             {selectedContacts.length > 0 && (
               <div className="space-y-3">
@@ -142,35 +166,45 @@ export default function AddFriendPage() {
           </div>
         )}
 
-        {/* Share button — works on iOS and as fallback */}
-        {hasShareAPI && (
-          <div className="space-y-2">
-            {hasContactPicker && (
-              <div className="flex items-center gap-3 my-4">
-                <div className="flex-1 h-px bg-gray-200" />
-                <span className="text-sm text-gray-400">or</span>
-                <div className="flex-1 h-px bg-gray-200" />
-              </div>
-            )}
-            <button
-              onClick={shareInvite}
-              className={`w-full py-4 rounded-2xl text-lg font-semibold active:scale-[0.98] transition-transform flex items-center justify-center gap-2 ${
-                hasContactPicker
-                  ? 'bg-white border-2 border-gray-200 text-gray-700'
-                  : 'bg-orange-500 text-white'
-              }`}
-            >
-              <span className="text-xl">&#128279;</span>
-              Share Invite Link
-            </button>
-            <p className="text-center text-sm text-gray-400">
-              Send via iMessage, WhatsApp, or any app
-            </p>
+        {/* Divider */}
+        {hasContactPicker && (
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-sm text-gray-400">or share your invite</span>
+            <div className="flex-1 h-px bg-gray-200" />
           </div>
         )}
 
+        {/* Mass invite — share to multiple platforms */}
+        <div className="mb-6">
+          <h2 className="text-sm font-semibold text-gray-500 mb-3">SHARE TO APPS</h2>
+          <div className="grid grid-cols-3 gap-2.5">
+            {SHARE_PLATFORMS.map((platform) => (
+              <button
+                key={platform.id}
+                onClick={() => openSharePlatform(platform.id)}
+                className="flex flex-col items-center gap-1.5 py-3 px-2 bg-white rounded-xl border border-gray-200 active:scale-95 transition-all"
+              >
+                <span className="text-2xl">{platform.icon}</span>
+                <span className="text-xs font-medium text-gray-600">{platform.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Native share (iOS) */}
+        {hasShareAPI && (
+          <button
+            onClick={shareInvite}
+            className="w-full mb-4 py-3.5 bg-white border-2 border-orange-200 text-orange-600 rounded-2xl font-semibold active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+          >
+            <span className="text-lg">&#128279;</span>
+            Share via Other Apps
+          </button>
+        )}
+
         {/* Invite link section — always show */}
-        <div className="space-y-4 mt-4">
+        <div className="space-y-4">
           <div className="bg-orange-50 rounded-2xl p-4 border border-orange-200">
             <p className="text-sm text-gray-600 mb-3">Your invite link:</p>
             <input
@@ -182,10 +216,14 @@ export default function AddFriendPage() {
               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm mb-2"
             />
             <button
-              onClick={() => {
-                const input = document.getElementById('invite-link') as HTMLInputElement;
-                input.select();
-                document.execCommand('copy');
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(inviteUrl)
+                } catch {
+                  const input = document.getElementById('invite-link') as HTMLInputElement;
+                  input.select();
+                  document.execCommand('copy');
+                }
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}

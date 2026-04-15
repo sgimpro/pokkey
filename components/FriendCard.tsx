@@ -11,6 +11,7 @@ interface FriendCardProps {
     streak_count?: number;
   };
   onNudge: (friendshipId: string, friendId: string, pokeType?: string) => Promise<void>;
+  onDelete?: (friendshipId: string) => void;
 }
 
 // Mini confetti particle system
@@ -57,7 +58,7 @@ function spawnConfetti(container: HTMLDivElement) {
   }, 700);
 }
 
-export default function FriendCard({ friendship, onNudge }: FriendCardProps) {
+export default function FriendCard({ friendship, onNudge, onDelete }: FriendCardProps) {
   const [nudging, setNudging] = useState(false);
   const [justNudged, setJustNudged] = useState(false);
   const [lastNudge, setLastNudge] = useState(friendship.last_nudge_at);
@@ -67,6 +68,9 @@ export default function FriendCard({ friendship, onNudge }: FriendCardProps) {
   const [bouncing, setBouncing] = useState(false);
   const [showPokeTypes, setShowPokeTypes] = useState(false);
   const [sentEmoji, setSentEmoji] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [swipeX, setSwipeX] = useState(0);
+  const touchStartX = useRef(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const status = getTimerStatus(lastNudge);
@@ -138,14 +142,49 @@ export default function FriendCard({ friendship, onNudge }: FriendCardProps) {
 
   const onCooldown = !!cooldown && !justNudged;
 
+  // Swipe-to-reveal-delete handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.touches[0].clientX;
+    if (diff > 0) {
+      setSwipeX(Math.min(diff, 80));
+    } else {
+      setSwipeX(0);
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (swipeX > 50) {
+      setSwipeX(80);
+    } else {
+      setSwipeX(0);
+    }
+  }, [swipeX]);
+
   return (
-    <div className="relative">
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Delete button behind the card */}
+      <div
+        className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 flex items-center justify-center rounded-r-2xl"
+        onClick={() => setShowDeleteConfirm(true)}
+      >
+        <span className="text-white text-xs font-bold">Remove</span>
+      </div>
+
       <div
         ref={cardRef}
-        className={`flex items-center justify-between p-4 rounded-2xl border-2 ${colors.bg} ${colors.border} transition-all`}
+        className={`relative flex items-center justify-between p-4 rounded-2xl border-2 ${colors.bg} ${colors.border} transition-all`}
         style={{
+          transform: `translateX(-${swipeX}px)`,
+          transition: swipeX === 0 || swipeX === 80 ? "transform 0.2s ease-out" : "none",
           animation: bouncing ? "pokeBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" : "none",
         }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <style jsx>{`
           @keyframes pokeBounce {
@@ -248,6 +287,35 @@ export default function FriendCard({ friendship, onNudge }: FriendCardProps) {
                 <span className="text-xs font-medium text-gray-700 leading-tight">{pt.label}</span>
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6" onClick={() => { setShowDeleteConfirm(false); setSwipeX(0); }}>
+          <div className="bg-white rounded-2xl p-5 w-full max-w-xs shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <p className="text-center text-3xl mb-3">&#128148;</p>
+            <p className="text-center font-bold text-gray-800 mb-1">Remove {friendship.friend.name}?</p>
+            <p className="text-center text-sm text-gray-500 mb-5">This will remove them from your friends list. You can always add them back later.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowDeleteConfirm(false); setSwipeX(0); }}
+                className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setSwipeX(0);
+                  onDelete?.(friendship.id);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-semibold text-sm active:scale-95 transition-transform"
+              >
+                Remove
+              </button>
+            </div>
           </div>
         </div>
       )}

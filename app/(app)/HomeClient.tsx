@@ -94,6 +94,19 @@ export default function HomeClient({
     }
   }
 
+  const handleDelete = async (friendshipId: string) => {
+    try {
+      const res = await fetch('/api/delete-friend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friendshipId })
+      })
+      if (res.ok) {
+        setLocalFriendships((prev: any[]) => prev.filter(f => f.id !== friendshipId))
+      }
+    } catch {}
+  }
+
   const handleAccept = async (friendshipId: string) => {
     await fetch('/api/accept-friendship', {
       method: 'POST',
@@ -189,7 +202,7 @@ export default function HomeClient({
         ) : (
           <div className="space-y-3">
             {localFriendships.map((f: any) => (
-              <FriendCard key={f.id} friendship={f} onNudge={handleNudge} />
+              <FriendCard key={f.id} friendship={f} onNudge={handleNudge} onDelete={handleDelete} />
             ))}
           </div>
         )}

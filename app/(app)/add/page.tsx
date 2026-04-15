@@ -45,8 +45,8 @@ export default function AddFriendPage() {
   }, [])
 
   const shareText = userName
-    ? `${userName} just poked you! 👊 Think you can keep up? Join POKKEY and find out who's the ultimate friendship champion.`
-    : "You just got poked! 👊 Think you can keep up? Join POKKEY and find out who's the ultimate friendship champion."
+    ? `${userName} just poked you 👊 Find out who your real friends are — the ones who actually show up. Join POKKEY.`
+    : "Find out who your real friends are — the ones who actually show up. 👆 Join POKKEY."
 
   const pickContacts = async () => {
     try {

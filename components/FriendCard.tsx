@@ -235,10 +235,10 @@ export default function FriendCard({ friendship, onNudge, onDelete }: FriendCard
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Quick poke button */}
+          {/* Poke button - opens emotion picker */}
           <button
             ref={btnRef}
-            onClick={onCooldown ? undefined : handleQuickPoke}
+            onClick={onCooldown ? undefined : (e) => { e.stopPropagation(); handleButtonClick(); }}
             disabled={nudging || justNudged || onCooldown}
             className={`relative overflow-visible px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
               justNudged
@@ -254,46 +254,38 @@ export default function FriendCard({ friendship, onNudge, onDelete }: FriendCard
             {nudging ? "..." : justNudged ? (
               <span>Sent! {sentEmoji || "👏"}</span>
             ) : onCooldown ? cooldown : (
-              <span>Poke 👊</span>
+              <span>Poke 👆</span>
             )}
           </button>
-
-          {/* More poke types button */}
-          {!onCooldown && !justNudged && !nudging && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleButtonClick();
-              }}
-              className="w-9 h-9 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center active:scale-95 transition-all text-lg"
-              aria-label="More poke types"
-            >
-              +
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Poke type picker */}
+      {/* Poke type picker - full screen modal */}
       {showPokeTypes && (
         <div
-          className="absolute right-0 top-full mt-2 z-40 bg-white rounded-2xl shadow-xl border border-gray-200 p-3 w-64"
-          style={{ animation: "pokeTypesIn 0.2s ease-out" }}
-          onClick={(e) => e.stopPropagation()}
+          className="fixed inset-0 bg-black/30 z-40 flex items-end justify-center"
+          onClick={() => setShowPokeTypes(false)}
         >
-          <p className="text-xs font-semibold text-gray-400 mb-2 px-1">CHOOSE A POKE</p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {POKE_TYPES.map((pt) => (
-              <button
-                key={pt.id}
-                onClick={() => sendPoke(pt)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-gray-50 active:scale-95 transition-all text-left"
-                style={{ border: `1.5px solid ${pt.color}20` }}
-              >
-                <span className="text-xl">{pt.emoji}</span>
-                <span className="text-xs font-medium text-gray-700 leading-tight">{pt.label}</span>
-              </button>
-            ))}
+          <div
+            className="w-full max-w-md bg-white rounded-t-3xl shadow-xl p-5 pb-8"
+            style={{ animation: "pokeTypesIn 0.25s ease-out" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+            <p className="text-sm font-bold text-gray-500 mb-3 px-1">HOW ARE YOU FEELING?</p>
+            <div className="grid grid-cols-2 gap-2">
+              {POKE_TYPES.map((pt) => (
+                <button
+                  key={pt.id}
+                  onClick={() => sendPoke(pt)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gray-50 active:scale-95 transition-all text-left"
+                  style={{ border: `2px solid ${pt.color}30`, backgroundColor: `${pt.color}08` }}
+                >
+                  <span className="text-2xl">{pt.emoji}</span>
+                  <span className="text-sm font-medium text-gray-700">{pt.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

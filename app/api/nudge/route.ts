@@ -5,6 +5,7 @@ import { sendSMS } from "@/lib/twilio";
 import { sendPushNotification } from "@/lib/push";
 import { SCORE_EVENTS } from "@/lib/scoring";
 import { getPokeType } from "@/lib/poke-types";
+import { getNewlyReachedMilestone } from "@/lib/streak-milestones";
 
 export async function POST(req: Request) {
   const supabase = createRouteHandlerClient({ cookies });
@@ -93,14 +94,16 @@ export async function POST(req: Request) {
         .eq("user_id", friendId)
         .eq("friend_id", user.id);
 
-      if (newStreak === 7) {
+      // Award bonus points at streak milestones
+      const milestone = getNewlyReachedMilestone(newStreak);
+      if (milestone) {
         await supabase.rpc("increment_score", {
           user_id: user.id,
-          amount: SCORE_EVENTS.FRIENDSHIP_STREAK_7_DAYS,
+          amount: milestone.bonusPoints,
         });
         await supabase.rpc("increment_score", {
           user_id: friendId,
-          amount: SCORE_EVENTS.FRIENDSHIP_STREAK_7_DAYS,
+          amount: milestone.bonusPoints,
         });
       }
     }

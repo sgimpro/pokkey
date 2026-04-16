@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getTimerStatus, getTimerLabel, getCooldownRemaining, statusColors } from "@/lib/timer";
 import { POKE_TYPES, type PokeType } from "@/lib/poke-types";
+import { getStreakMilestone } from "@/lib/streak-milestones";
 
 interface FriendCardProps {
   friendship: {
@@ -76,6 +77,7 @@ export default function FriendCard({ friendship, onNudge, onDelete }: FriendCard
   const status = getTimerStatus(lastNudge);
   const colors = statusColors[status];
   const streak = friendship.streak_count || 0;
+  const streakMilestone = getStreakMilestone(streak);
 
   // Update cooldown every 15s
   useEffect(() => {
@@ -217,7 +219,12 @@ export default function FriendCard({ friendship, onNudge, onDelete }: FriendCard
               </p>
               {streak >= 2 && (
                 <span className="text-sm font-semibold text-orange-500">
-                  &#128293; {streak}
+                  {streakMilestone ? streakMilestone.emoji : "\u{1F525}"} {streak}
+                  {streakMilestone && (
+                    <span className="text-xs font-medium text-orange-400 ml-1">
+                      {streakMilestone.name}
+                    </span>
+                  )}
                 </span>
               )}
             </div>

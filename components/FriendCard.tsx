@@ -267,13 +267,13 @@ export default function FriendCard({ friendship, onNudge, onDelete }: FriendCard
           onClick={() => setShowPokeTypes(false)}
         >
           <div
-            className="w-full max-w-md bg-white rounded-t-3xl shadow-xl p-5 pb-8"
+            className="w-full max-w-md bg-white rounded-t-3xl shadow-xl p-5 pb-10"
             style={{ animation: "pokeTypesIn 0.25s ease-out" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
             <p className="text-sm font-bold text-gray-500 mb-3 px-1">HOW ARE YOU FEELING?</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pb-2">
               {POKE_TYPES.map((pt) => (
                 <button
                   key={pt.id}
